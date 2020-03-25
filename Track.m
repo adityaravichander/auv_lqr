@@ -24,9 +24,8 @@
     y_dotreq = 0;
  
  %% State variables and Control action   
-    for i=0:20 
-        
-        
+    for i=0:18
+            
         % Updating values for state variables
         x_e   = x-xreq;                                                     % error in x coordinate of positon
         y_e   = y-yreq;                                                     % error in y coordinate of positon
@@ -60,13 +59,16 @@
         
         
         % Displaying values of state variables
-        printmatrix = [ i;
-                        x_e;
+        disp('iteration value');
+        disp(i);
+        
+       
+        printmatrix = [ x_e;
                         y_e;
                         psi_e;    
                         u_e;
                         v_e;
-                        r_e; ];
+                        r_e;];
         disp(printmatrix);
         
         
@@ -78,12 +80,12 @@
 %         yreq     = q(end,2);
 %         x_dotreq = q(end,3);
 %         y_dotreq = q(end,4);
-        
+%         
 
     end 
     
 %% Plotting Results
- 
+
    % Plotting graphs
    % figure(1)
    % plot(p(:,1),q(:,1));
