@@ -43,33 +43,44 @@ Q = [ 1.5,   0,   0,   0,   0,   0;
      
 R = [ 1, 0;
       0, 1];
-  
-dpdt = zeros(9,1); 
+
+C = [ 1 1 1 1 1 1 ];
+disp('C');
+disp(C);
+dpdt = zeros(9,1);
 e = 0.5;
+
+poles = eig(A);
+disp('poles');
+disp(poles);
+
+rankc = rank(ctrb(A,B));
+disp('rankC');
+disp(rankc);
+
+ranko = rank(obsv(A,C));
+disp('rankO');
+disp(ranko);
 
 distance = ((p(1)*p(1))+(p(2)*p(2)))^(0.5);
 
 if(distance>e)
-    K = lqr(A,B,Q,R);
-    F = -(K*X);     
-    X_dot = A*X + B*F;      
-    dpdt(1) = X_dot(1); 
-    dpdt(2) = X_dot(2);      
-    dpdt(3) = X_dot(3);
-    dpdt(4) = X_dot(4);
-    dpdt(5) = X_dot(5);  
-    dpdt(6) = X_dot(6);  
-
+        K = lqr(A,B,Q,R);
+        F = -(K*X);     
+        X_dot = A*X + B*F;      
+        dpdt(1) = X_dot(1); 
+        dpdt(2) = X_dot(2);      
+        dpdt(3) = X_dot(3);
+        dpdt(4) = X_dot(4);
+        dpdt(5) = X_dot(5);  
+        dpdt(6) = X_dot(6);  
 end
 
 dpdt(7) = 0;
 dpdt(8) = 0;
 dpdt(9) = 0;
 
-
-
-
-
+% local stability proof of lqr 
 
 
 
