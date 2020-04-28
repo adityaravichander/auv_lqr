@@ -14,66 +14,69 @@
     yreq = 10;      
     x_dotreq = 0.1;
     y_dotreq = 0;
+    Reqd = zeros(8,30);               
+    Reqd(1:8,1) = [ 10,10,0.1,0,0,0,0,0]; % [ xreq, yreq, x_dotreq, y_dotreq, psireq, ureq, vreq, rreq ]    
     
     %initial instant vehicle values    
-    Inst = zeros(6,20);
-    Inst(1:6,1) = [ 15,15,0,0,0,0 ];  % [ x, y, psi, u, v, r ]
-    m = zeros(1,21);
+    Inst = zeros(6,30);
+    Inst(1:6,1) = [ 15,15,0,0,0,0 ];  	  % [ x, y, psi, u, v, r ]
+    m = zeros(1,30);
     m(1,1) = 1;
-  
-    % Initial values for state variables
-    Error = zeros(6,20);  % [ xe, ye, psie, ue, ve, re ]
-    Error(1,1)   = Inst(1,1)-xreq;                                          
-    Error(2,1)   = Inst(2,1)-yreq;                          
-    XE = [ Error(1,1); Error(2,1)];
-    R1 = [ cos(Inst(3,1)), -sin(Inst(3,1));
-        sin(Inst(3,1)), cos(Inst(3,1))];
+    
+%% main LOOP    
+
+for i = 1:10
+    
+    % values for state variables
+    Error = zeros(6,30);                  % [ xe, ye, psie, ue, ve, re ]
+    Error(1,i)   = Inst(1,i)-Reqd(1,i);                                          
+    Error(2,i)   = Inst(2,i)-Reqd(2,i);                          
+    XE = [ Error(1,i); Error(2,i)];
+    R1 = [ cos(Inst(3,i)), -sin(Inst(3,i));
+        sin(Inst(3,i)), cos(Inst(3,i))];
     UVE = -(transpose(R1)*XE); 
-    Error(4,1) = UVE(1);                  
-    Error(5,1) = UVE(2);                            
-    ureq = Inst(4,1)-Error(4,1);
-    vreq = Inst(5,1)-Error(5,1);    
-    psireq = atan(y_dotreq/x_dotreq) - atan(vreq/ureq);
-    Error(3,1) = Inst(3,1)-psireq;
-    Error(6,1) = Error(3,1);                               
-    rreq = Inst(6,1)-Error(6,1);   
-     
- %% State variables and Control action   
- 
-        i=2;
-        % Control action by LQR
-        time_period1 = [1 500];
-        n = 1;
-        V0 = [ Error(1,i-1),Error(2,i-1),Error(3,i-1),Error(4,i-1),Error(5,i-1),Error(6,i-1),ureq,vreq,rreq,n]; 
-        [t1,p] = ode45('Trackfn',time_period1,V0);        
-        
-        Error(1:6,i) = [ p(end,1),p(end,2),p(end,3),p(end,4),p(end,5),p(end,6)];        
+    Error(4,i) = UVE(1);                  
+    Error(5,i) = UVE(2);                            
+    Reqd(6,i) = Inst(4,i)-Error(4,i);
+    Reqd(7,i) = Inst(5,i)-Error(5,i);    
+    Reqd(5,i) = atan(Reqd(4,i)/Reqd(3,i)) - atan(Reqd(7,i)/Reqd(6,i));
+    Error(3,i) = Inst(3,i)-Reqd(5,i);
+    Error(6,i) = Error(3,i);                               
+    Reqd(8,i) = Inst(6,i)-Error(6,i);   
+    
+    %print reqd values
+    disp('reqd');
+    disp(Reqd(1:8,i));
+    
+    % Control action by LQR
+    time_period1 = [1 1000];
+    V0 = [ Error(1,i),Error(2,i),Error(3,i),Error(4,i),Error(5,i),Error(6,i),Reqd(6,i),Reqd(7,i),Reqd(8,i)]; 
+    [t1,p] = ode45('Trackfn',time_period1,V0);        
 
-        Inst(1:6,i) = [ Error(1,i)+xreq,Error(2,i)+yreq,Error(3,i)+psireq,Error(4,i)+ureq,Error(5,i)+vreq,Error(6,i)+rreq ];
-        m(1,i) = i;
-        
-        % Displaying values 
-       % disp('iteration value');
-       % disp(i);
-        %disp(Error(1:6,i));
+    %print error and instantaneous values
+    Error(1:6,i+1) = [ p(end,1),p(end,2),p(end,3),p(end,4),p(end,5),p(end,6)];     
+    Inst(1:6,i+1) = [ Error(1,i+1)+Reqd(1,i),Error(2,i+1)+Reqd(2,i),Error(3,i+1)+Reqd(5,i),Error(4,i+1)+Reqd(6,i),Error(5,i+1)+Reqd(7,i),Error(6,i+1)+Reqd(8,i) ];
+    m(1,i) = i;
+    disp('error');
+    disp(Error(1:6,i+1));
+    disp('instant position');
+    disp(Inst(1:6,i+1));
+    
+    % update required values
+    time_period2 = [1 10];
+    V1 = [ Reqd(1,i), Reqd(2,i), Reqd(3,i), Reqd(4,i) ];
+    [t2,q] = ode45('auv_Track_trajectory',time_period2,V1);
+    Reqd(1:4,i+1) = [ q(end,1),q(end,2),q(end,3),q(end,4)];
 
-    %% PLOTTING RESULTS
-%       figure(1)
-%       plot(Inst(1,1:i),Inst(2,1:i)); 
-%               figure(2)
-%         plot(m(1,1:i),Error(1,1:i));
+end        
+
+%%    plotting results
+
+	%plot instantaneous values
+       figure(1)
+       plot(Inst(1,1:i),Inst(2,1:i));  
+
+	%plot required trajectory
+       figure(2)
+       plot(Reqd(1,1:i),Reqd(2,1:i));
        
-%         figure(3)
-%         plot(tm,p(tm,2));
-
-        
-        % Updating the required values of variables 
-%         time_period2 = [0 2];
-%         R0 = [ xreq, yreq, x_dotreq, y_dotreq];
-%         [t2,q] = ode45('auv_Track_trajectory',time_period2,R0);               
-%         xreq     = q(end,1);
-%         yreq     = q(end,2);
-%         x_dotreq = q(end,3);
-%         y_dotreq = q(end,4);
-%         
-

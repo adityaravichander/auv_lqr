@@ -1,5 +1,7 @@
+%% Function for ODE solver of Error 
 function dpdt = Trackfn(t,p)
 
+% constants
 m11 = 215;
 m22 = 265;
 m33 = 80;
@@ -7,6 +9,7 @@ d11 = 70;
 d22 = 100;
 d33 = 50; 
 
+% error and reqd vales
 x_e   = p(1);
 y_e   = p(2);
 psi_e = p(3);
@@ -19,11 +22,14 @@ rreq = p(9);
 
 dpdt = zeros(9,1);    
 
+% absolute values of position
 xe_mod = abs(x_e);
 ye_mod = abs(y_e);
-e=0.5;
+e=0.05;
 
 if((xe_mod>=e)||(ye_mod>=e))
+
+    % Matrices of State model	
     X     = [ x_e; y_e; psi_e; u_e; v_e; r_e]; 
 
     A = [0, -rreq,0,                    -1,                      0,                 0;
@@ -50,6 +56,7 @@ if((xe_mod>=e)||(ye_mod>=e))
     R = [ 1, 0;
         0, 1];
     
+    % stablity, controllability, observability calcaulations
     % C = [ 1 1 1 1 1 1 ];
     % % disp('C');
     % % disp(C);
@@ -65,33 +72,37 @@ if((xe_mod>=e)||(ye_mod>=e))
     % ranko = rank(obsv(A,C));
     % % disp('rankO');
     % % disp(ranko);
-    printmatrix = [ x_e;
-                        y_e;
-                        psi_e;    
-                        u_e;
-                        v_e;
-                        r_e;];
-        disp(printmatrix);
+
+%   errormatrix = [ x_e;
+%                   y_e;
+%                 psi_e;    
+%                   u_e;
+%                   v_e;
+%                   r_e;];
+%   disp(errormatrix);
     
-    K = lqr(A,B,Q,R);
-    F = -(K*X);     
+    K = lqr(A,B,Q,R);	%lqr
+    F = -(K*X);		%control input     
+
+    % updation of States
     X_dot = A*X + B*F;      
-    dpdt(1) = X_dot(1); 
-    dpdt(2) = X_dot(2);      
-    dpdt(3) = X_dot(3);
-    dpdt(4) = X_dot(4);
-    dpdt(5) = X_dot(5);  
-    dpdt(6) = X_dot(6);
-    dpdt(7) = 0;
-    dpdt(8) = 0;
-    dpdt(9) = 0;   
+    dpdt(1) = X_dot(1); % find xe
+    dpdt(2) = X_dot(2); % find ye      
+    dpdt(3) = X_dot(3); % find psie
+    dpdt(4) = X_dot(4); % find ue
+    dpdt(5) = X_dot(5); % find ve  
+    dpdt(6) = X_dot(6); % find re
+    dpdt(7) = 0;	% find ureq
+    dpdt(8) = 0;	% find vreq
+    dpdt(9) = 0; 	% find rreq
 
 else
+    % error is minimal enough
     dpdt(1) = 0; 
-    dpdt(2) = 0;      
+    dpdt(2) = 0;   
     dpdt(3) = 0;
-    dpdt(4) = 0;
-    dpdt(5) = 0;  
+    dpdt(4) = 0; 
+    dpdt(5) = 0;
     dpdt(6) = 0;
     dpdt(7) = 0;
     dpdt(8) = 0;
