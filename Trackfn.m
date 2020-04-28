@@ -43,24 +43,26 @@ Q = [ 1.5,   0,   0,   0,   0,   0;
      
 R = [ 1, 0;
       0, 1];
+  
+% 
+% C = [ 1 1 1 1 1 1 ];
+% disp('C');
+% disp(C);
 
-C = [ 1 1 1 1 1 1 ];
-disp('C');
-disp(C);
 dpdt = zeros(9,1);
 e = 0.5;
 
-poles = eig(A);
-disp('poles');
-disp(poles);
-
-rankc = rank(ctrb(A,B));
-disp('rankC');
-disp(rankc);
-
-ranko = rank(obsv(A,C));
-disp('rankO');
-disp(ranko);
+% poles = eig(A);
+% disp('poles');
+% disp(poles);
+% 
+% rankc = rank(ctrb(A,B));
+% disp('rankC');
+% disp(rankc);
+% 
+% ranko = rank(obsv(A,C));
+% disp('rankO');
+% disp(ranko);
 
 distance = ((p(1)*p(1))+(p(2)*p(2)))^(0.5);
 

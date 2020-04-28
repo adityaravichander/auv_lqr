@@ -22,9 +22,10 @@
     yreq = 10;      
     x_dotreq = 0.1;
     y_dotreq = 0;
+    Inst = zeros(6,18);
  
  %% State variables and Control action   
-    for i=0:18
+    for i=1:18
             
         % Updating values for state variables
         x_e   = x-xreq;                                                     % error in x coordinate of positon
@@ -57,6 +58,13 @@
         v   = p(end,5) + vreq;
         r   = p(end,6) + rreq;
         
+      
+        Inst(1,i) = x;
+        Inst(2,i) = y;
+        Inst(3,i) = psi;
+        Inst(4,i) = u;
+        Inst(5,i) = v;
+        Inst(6,i) = r;
         
         % Displaying values of state variables
         disp('iteration value');
@@ -83,9 +91,13 @@
 %         
 
     end 
-    
-%% Plotting Results
 
+
+        figure(1)
+        plot(Inst(1,i),i); 
+
+%% Plotting Results
+	
    % Plotting graphs
    % figure(1)
    % plot(p(:,1),q(:,1));
