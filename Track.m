@@ -7,78 +7,65 @@
     m33 = 80;
     d11 = 70;
     d22 = 100;
-    d33 = 50; 
+    d33 = 50;    
     
-    %initial instant vehicle values in body frame
-    x = 15;
-    y = 15;
-    psi = 0;
-    u = 0;
-    v = 0;
-    r = 0;   
-    
-    %required value and States of LQR
+    %initial required values
     xreq = 10;  
     yreq = 10;      
     x_dotreq = 0.1;
     y_dotreq = 0;
-    Inst = zeros(6,18);
- 
+    
+    %initial instant vehicle values    
+    Inst = zeros(6,20);
+    Inst(1:6,1) = [ 15,15,0,0,0,0 ];  % [ x, y, psi, u, v, r ]
+    m = zeros(1,21);
+    m(1,1) = 1;
+  
+    % Initial values for state variables
+    Error = zeros(6,20);  % [ xe, ye, psie, ue, ve, re ]
+    Error(1,1)   = Inst(1,1)-xreq;                                          
+    Error(2,1)   = Inst(2,1)-yreq;                          
+    XE = [ Error(1,1); Error(2,1)];
+    R1 = [ cos(Inst(3,1)), -sin(Inst(3,1));
+        sin(Inst(3,1)), cos(Inst(3,1))];
+    UVE = -(transpose(R1)*XE); 
+    Error(4,1) = UVE(1);                  
+    Error(5,1) = UVE(2);                            
+    ureq = Inst(4,1)-Error(4,1);
+    vreq = Inst(5,1)-Error(5,1);    
+    psireq = atan(y_dotreq/x_dotreq) - atan(vreq/ureq);
+    Error(3,1) = Inst(3,1)-psireq;
+    Error(6,1) = Error(3,1);                               
+    rreq = Inst(6,1)-Error(6,1);   
+     
  %% State variables and Control action   
-    for i=1:18
-            
-        % Updating values for state variables
-        x_e   = x-xreq;                                                     % error in x coordinate of positon
-        y_e   = y-yreq;                                                     % error in y coordinate of positon
-        XE = [ x_e; y_e];
-        R1 = [ cos(psi), -sin(psi);
-            sin(psi), cos(psi)];
-        UVE = -(transpose(R1)*XE); 
-        u_e = UVE(1);                                                       % error in surge velocity 
-        v_e = UVE(2);                                                       % error in sway velocity 
-        ureq = u-u_e;
-        vreq = v-v_e;    
-        psireq = atan(y_dotreq/x_dotreq) - atan(vreq/ureq);
-        psi_e = psi-psireq;
-        r_e = psi_e;                                                        % error in yaw    
-        rreq = r-r_e;
-          
-        
+ 
+        i=2;
         % Control action by LQR
-        time_period1 = [0 100];
-        V0 = [ x_e, y_e, psi_e, u_e, v_e, r_e, ureq, vreq, rreq]; 
-        [t1,p] = ode45('Trackfn',time_period1,V0); 
+        time_period1 = [1 500];
+        n = 1;
+        V0 = [ Error(1,i-1),Error(2,i-1),Error(3,i-1),Error(4,i-1),Error(5,i-1),Error(6,i-1),ureq,vreq,rreq,n]; 
+        [t1,p] = ode45('Trackfn',time_period1,V0);        
         
+        Error(1:6,i) = [ p(end,1),p(end,2),p(end,3),p(end,4),p(end,5),p(end,6)];        
+
+        Inst(1:6,i) = [ Error(1,i)+xreq,Error(2,i)+yreq,Error(3,i)+psireq,Error(4,i)+ureq,Error(5,i)+vreq,Error(6,i)+rreq ];
+        m(1,i) = i;
         
-        % Updating instantaneous variables
-        x   = p(end,1) + xreq;
-        y   = p(end,2) + yreq;
-        psi = p(end,3) + psireq;
-        u   = p(end,4) + ureq;
-        v   = p(end,5) + vreq;
-        r   = p(end,6) + rreq;
-        
-      
-        Inst(1,i) = x;
-        Inst(2,i) = y;
-        Inst(3,i) = psi;
-        Inst(4,i) = u;
-        Inst(5,i) = v;
-        Inst(6,i) = r;
-        
-        % Displaying values of state variables
-        disp('iteration value');
-        disp(i);
-        
+        % Displaying values 
+       % disp('iteration value');
+       % disp(i);
+        %disp(Error(1:6,i));
+
+    %% PLOTTING RESULTS
+%       figure(1)
+%       plot(Inst(1,1:i),Inst(2,1:i)); 
+%               figure(2)
+%         plot(m(1,1:i),Error(1,1:i));
        
-        printmatrix = [ x_e;
-                        y_e;
-                        psi_e;    
-                        u_e;
-                        v_e;
-                        r_e;];
-        disp(printmatrix);
-        
+%         figure(3)
+%         plot(tm,p(tm,2));
+
         
         % Updating the required values of variables 
 %         time_period2 = [0 2];
@@ -90,20 +77,3 @@
 %         y_dotreq = q(end,4);
 %         
 
-    end 
-
-
-        figure(1)
-        plot(Inst(1,i),i); 
-
-%% Plotting Results
-	
-   % Plotting graphs
-   % figure(1)
-   % plot(p(:,1),q(:,1));
-   
-    
-        
-    
-      
-    
