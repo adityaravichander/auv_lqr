@@ -8,7 +8,6 @@ C = [0 0];
 cx = C(1);
 cy = C(2);
 R = 10;
-%plot(C(1)+R*cos([1:360].*pi/180),C(2)+R*sin([1:360].*pi/180),'r'); hold on;
 Reqd = zeros(6,30); % [xr,yr,psir,ur,vr,rr]
 
 %% Initialise constants
@@ -21,7 +20,7 @@ Reqd = zeros(6,30); % [xr,yr,psir,ur,vr,rr]
 
 % AUV initialisation 
 auv = zeros(6,10);
-auv(:,1) = [1, 12, 0, 0, 0, 0]; % [x,y,psi,u,v,r]
+auv(:,1) = [11, 5, 0, 0, 0, 0]; % [x,y,psi,u,v,r]
 x   = auv(1,1);
 y   = auv(2,1);
 psi = auv(3,1);
@@ -39,9 +38,9 @@ Error(1,1) = per_dist*(cos(theta));        %xe
 Error(2,1) = per_dist*(sin(theta));        %ye
 Reqd(1,1)  = auv(1,1)   - Error(1,1);      %xr
 Reqd(2,1)  = auv(2,1)   - Error(2,1);      %yr
-
+%    i=1;
 % loop for updating 
-for i=1:360
+for i=1:3
     % Calculate required values and error
     disp(i);    
     theta = atan((auv(2,i)-cy)/(auv(1,i)-cx));
@@ -68,16 +67,21 @@ for i=1:360
     time_period1 = [0 1];
     V0 = [ Error(1,i),Error(2,i),Error(3,i),Error(4,i),Error(5,i),Error(6,i),Reqd(4,i),Reqd(5,i),Reqd(6,i)]; 
     [t1,p] = ode45('Trackfn',time_period1,V0);  
-    %figure(1)
-    %plot(p(:,1),p(:,2),'g');   % error-green 
+    %figure(2)
+    %plot(p(:,1),t1,'g');   % error-green 
+    
+    %figure(3)
+    %plot((Reqd(1,i)+p(:,1)),(Reqd(2,i)+p(:,2)),'b')
+    %hold on 
+    %plot(C(1)+R*cos([1:360].*pi/180),C(2)+R*sin([1:360].*pi/180),'r'); hold on;
+
     
     Error(:,i+1) = [ p(end,1),p(end,2),p(end,3),p(end,4),p(end,5),p(end,6)];     
     auv(:,i+1) = [ Error(1,i+1)+Reqd(1,i),Error(2,i+1)+Reqd(2,i),Error(3,i+1)+Reqd(3,i),Error(4,i+1)+Reqd(4,i),Error(5,i+1)+Reqd(5,i),Error(6,i+1)+Reqd(6,i) ];
 
-    figure(4)
-    plot(auv(1,:),auv(2,:))
-    disp('error');
-    disp(p(:,1:2));
+
+    %disp('error');
+    %disp(p(:,1:2));
      
     % Display
     disp('reqd');
@@ -86,10 +90,12 @@ for i=1:360
     disp('auv');
     disp(auv(:,i+1)); 
     
-    Reqd(1,i+1) = (C(1)+R*cos(i*pi/180));  % next xr
-    Reqd(2,i+1) = (C(2)+R*sin(i*pi/180));  % next yr
-    Error(1,i+1) = auv(1,i) - Reqd(1,i);
-    Error(2,i+1) = auv(2,i) - Reqd(2,i);
+    Reqd(1,i+1) = (C(1)+(R*cos(i*pi/180)));  % next xr
+    Reqd(2,i+1) = (C(2)+(R*sin(i*pi/180)));  % next yr
+    Error(1,i+1) = auv(1,i+1) - Reqd(1,i+1);
+    Error(2,i+1) = auv(2,i+1) - Reqd(2,i+1);
 end       
-
-
+figure(1)
+plot(C(1)+R*cos([1:360].*pi/180),C(2)+R*sin([1:360].*pi/180),'r'); hold on;
+hold on
+plot(auv(1,1:i+1),auv(2,1:i+1))
