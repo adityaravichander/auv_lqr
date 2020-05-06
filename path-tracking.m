@@ -40,7 +40,7 @@ Reqd(1,1)  = auv(1,1)   - Error(1,1);      %xr
 Reqd(2,1)  = auv(2,1)   - Error(2,1);      %yr
 %    i=1;
 % loop for updating 
-for i=1:3
+for i=1:180
     % Calculate required values and error
     disp(i);    
     theta = atan((auv(2,i)-cy)/(auv(1,i)-cx));
@@ -64,16 +64,16 @@ for i=1:3
     
  
     %Control action by LQR
-    time_period1 = [0 1];
+    time_period1 = [0 600];
     V0 = [ Error(1,i),Error(2,i),Error(3,i),Error(4,i),Error(5,i),Error(6,i),Reqd(4,i),Reqd(5,i),Reqd(6,i)]; 
     [t1,p] = ode45('Trackfn',time_period1,V0);  
     %figure(2)
     %plot(p(:,1),t1,'g');   % error-green 
     
-    %figure(3)
-    %plot((Reqd(1,i)+p(:,1)),(Reqd(2,i)+p(:,2)),'b')
-    %hold on 
-    %plot(C(1)+R*cos([1:360].*pi/180),C(2)+R*sin([1:360].*pi/180),'r'); hold on;
+    figure(3)
+    plot((Reqd(1,i)+p(:,1)),(Reqd(2,i)+p(:,2)),'b')
+    hold on 
+    plot(C(1)+R*cos([1:360].*pi/180),C(2)+R*sin([1:360].*pi/180),'r'); hold on;
 
     
     Error(:,i+1) = [ p(end,1),p(end,2),p(end,3),p(end,4),p(end,5),p(end,6)];     
@@ -90,8 +90,8 @@ for i=1:3
     disp('auv');
     disp(auv(:,i+1)); 
     
-    Reqd(1,i+1) = (C(1)+(R*cos(i*pi/180)));  % next xr
-    Reqd(2,i+1) = (C(2)+(R*sin(i*pi/180)));  % next yr
+    Reqd(1,i+1) = (C(1)+(R*cos(2*i*pi/180)));  % next xr
+    Reqd(2,i+1) = (C(2)+(R*sin(2*i*pi/180)));  % next yr
     Error(1,i+1) = auv(1,i+1) - Reqd(1,i+1);
     Error(2,i+1) = auv(2,i+1) - Reqd(2,i+1);
 end       
