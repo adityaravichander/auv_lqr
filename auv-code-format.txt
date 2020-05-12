@@ -1,0 +1,30 @@
+auv-code-format
+
+# center and radius of reqd.circle
+# auv initial values
+
+for loop
+{
+	
+# (pd) perpendicular distance , theta
+
+# xe=pdcos(theta)   	--- xreq
+# ye=pdsin(theta)	--- yreq
+		  	--- psireq (1.57+theta)
+
+
+# [ue,ve] = Rt [xe,ye] 	--- ureq,vreq
+# re = -(psie) 		--- rreq
+
+
+# inputs for ode45 -- [ x,y,psi,u,v,r,ureq,vreq,rreq,xreq,yreq,psireq ] - 12
+
+	*	find X - states of LQR ( xe,ye,psie,ue,ve,re )
+	*	find K by lqr(A,B,Q,R)
+	*	find F = -K*X
+
+	*	differential eqns to find auv (x,y,psi,u,v,r)
+
+# get updated auv ( x,y,psi,u,v,r )
+
+}
