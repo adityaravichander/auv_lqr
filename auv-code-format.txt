@@ -2,6 +2,7 @@ auv-code-format
 
 # center and radius of reqd.circle
 # auv initial values
+# force initial values
 
 for loop
 {
@@ -17,7 +18,7 @@ for loop
 # re = -(psie) 		--- rreq
 
 
-# inputs for ode45 -- [ x,y,psi,u,v,r,ureq,vreq,rreq,xreq,yreq,psireq ] - 12
+# inputs for ode45 -- [ x,y,psi,u,v,r,ureq,vreq,rreq,xreq,yreq,psireq, fuin, frin ] - 14
 
 	*	find X - states of LQR ( xe,ye,psie,ue,ve,re )
 	*	find K by lqr(A,B,Q,R)
@@ -26,5 +27,6 @@ for loop
 	*	differential eqns to find auv (x,y,psi,u,v,r)
 
 # get updated auv ( x,y,psi,u,v,r )
+  get updated fuin, frin
 
 }
