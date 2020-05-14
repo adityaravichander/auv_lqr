@@ -1,12 +1,19 @@
 function dpdt = Trackfn(t,p)
-
+    
 % Constants
-m11 = 215;
-m22 = 265;
-m33 = 80;
-d11 = 70;
-d22 = 100;
-d33 = 50; 
+mass= 185; % Mass kg
+Iz = 50; % Rotational inertia kg-m^2
+Xu = -30; % added mass kg
+Yv = -90; % added mass kg
+Nr = -30; % added mass kg
+d11 = 70; % surge linear drag
+d22 = 100;% sway linear drag
+d33 = 50; % yaw linear drag
+
+% combined inertia and added mass terms
+m11 = mass - Xu; %kg 
+m22 = mass - Yv; %kg
+m33 = Iz- Nr;    %kg-m^2
 
 % AUV parameters
 x   = p(1);
@@ -23,15 +30,13 @@ rreq   = p(9);
 xreq   = p(10);
 yreq   = p(11);
 psireq = p(12);
-fureq = p(13);
-frreq = p(14);
 
 dpdt = zeros(12,1);    
 
 X = [ (x-xreq); (y-yreq); (psi-psireq); (u-ureq); (v-vreq); (r-rreq)]; % Errors - states of LQR
 xe_mod = abs(X(1));
 ye_mod = abs(X(2));
-e=0.1;
+e=0.01;
 
 
 
@@ -50,7 +55,7 @@ if((xe_mod>=e)||(ye_mod>=e))
             0,      0;
             0,  1/m33];
 
-    q = 5;
+    q = 1;
     Q =[q,0,0,0,0,0;
         0,q,0,0,0,0;
         0,0,q,0,0,0;
@@ -63,26 +68,33 @@ if((xe_mod>=e)||(ye_mod>=e))
 
     K = lqr(A,B,Q,R);
     F = -(K*X);  
-    fureq = p(13)-F(1);
-    frreq = p(14)-F(2);
+    
+    p(13) = p(13)-F(1);
+    p(14) = p(14)-F(2);
+    dpdt(13)= p(13);
+    dpdt(14)= p(14);
+else 
+    dpdt(13)= p(13);
+    dpdt(14)= p(14);
 end
 
 
 % ODE solver 
-dpdt(4) = ((m22*v*r)/m11) - ((-d11*u)/m11) + (fureq/m11);
+dpdt(4) = ((m22*v*r)/m11) - ((-d11*u)/m11) + (p(13)/m11);
 dpdt(5) = -((m11*u*r)/m22) - ((-d22*v)/m22);  
-dpdt(6) = (((m11-m22)*u*v)/m33) - ((-d33*r)/m33) + (frreq/m33);       
+dpdt(6) = (((m11-m22)*u*v)/m33) - ((-d33*r)/m33) + (p(14)/m33);       
+dpdt(3) = (r);
 dpdt(1) = (u*cos(psi)) - (v*sin(psi)); 
 dpdt(2) = (u*sin(psi)) + (v*cos(psi));      
-dpdt(3) = (r);
+
+
 dpdt(7) = 0;
 dpdt(8) = 0;
 dpdt(9) = 0;
 dpdt(10)= 0;
 dpdt(11)= 0;
 dpdt(12)= 0;
-dpdt(13)= 0;
-dpdt(14)= 0;
+
 
 %% Controllability and Observability tests  
 

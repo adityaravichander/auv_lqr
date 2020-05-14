@@ -1,7 +1,5 @@
 % Trajectory planning and Tracking control of underactuated AUV
-clear all;
-clc;
-clf;
+
 
 % AUV parameters
 auv = zeros(6, 100);   % [ x, y, psi, u, v, r ]
@@ -14,18 +12,18 @@ cx = 0;
 cy = 0;
 R = 10;
 Reqd = zeros(6, 100);  % [ x_req, y_req, psi_req, u_req, v_req, r_req ]
-Fin = [0,0];
+Fin = [0, 0];
 %Error parameters
 Error = zeros(6, 100); % [ x_error, y_error, psi_error, u_error, v_error, r_error ]
-
+e=0.01;
 %    i=1;
 
-for i = 1:50
+for i = 1:150
 
     % Calculate Required values
     disp(i);
     per_dist = sqrt((auv(1, i)^2) + (auv(2, i)^2)) - R; % perpendicular distance between AUV and path
-    theta = atan((auv(2, i) - cy) / (auv(1, i) - cx));  % angle between point and center of circle
+    theta = atan2((auv(2, i) - cy),(auv(1, i) - cx));  % angle between point and center of circle
 
     Error(1, i) = per_dist * (cos(theta));              % x_error
     Error(2, i) = per_dist * (sin(theta));              % y_error
@@ -56,8 +54,8 @@ for i = 1:50
     disp(Error(1:2,i));
     
     % Control action by LQR
-    time_period = [0 1];
-    V0 = [auv(1, i), auv(2, i), auv(3, i), auv(4, i), auv(5, i), auv(6, i), Reqd(4, i), Reqd(5, i), Reqd(6, i), Reqd(1, i), Reqd(2, i), Reqd(3, i), Fin(1), Fin(2)];
+    time_period = [0 0.1];
+    V0 = [auv(1, i),auv(2, i),auv(3, i),auv(4, i),auv(5, i),auv(6, i),Reqd(4, i),Reqd(5, i),Reqd(6, i),Reqd(1, i),Reqd(2, i),Reqd(3, i),Fin(1),Fin(2)];
     [t1, p] = ode45('Trackfn', time_period, V0);
     
     % Plot auv's path and required path
@@ -67,11 +65,15 @@ for i = 1:50
     plot(cx + R * cos([1:360] .* pi / 180), cy + R * sin([1:360] .* pi / 180), 'r'); % plots required path
 
     % Update auv parameters
-    auv(:, i + 1) = [p(end, 1), p(end, 2), p(end, 3), p(end, 4), p(end, 5), p(end, 6)];
-
+    auv(:, i + 1) = p(end, 1:6);
+    Fin = [ p(end,13), p(end,14)];
+    disp('fin');
+    disp(Fin);
     % Display auv position
-    disp('auvpos');
-    disp(auv(1:2,i+1));
+    disp('auv');
+    disp(p(end,1:6));
+ % 
+    
 end
 
 
