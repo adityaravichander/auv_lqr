@@ -44,12 +44,17 @@ for i = 1:200
     xyGE(1:2,i) = [ per_dist * (cos(theta)); per_dist * (sin(theta)) ];  % position error global frame
     Reqd(1,i) = auv(1,i) - xyGE(1);        % x_required
     Reqd(2,i) = auv(2,i) - xyGE(2);        % y_required
-    R1 = [ cos(auv(3,i)), sin(auv(3,i));   % Rotation matrix for global to body frame
-          -sin(auv(3,i)), cos(auv(3,i))];
+    
+    R1 = [ cos(auv(3,i)), -sin(auv(3,i));   % Rotation matrix 1
+           sin(auv(3,i)), cos(auv(3,i))];
+       
+    R2 = [-cos(Reqd(3,i)), +sin(Reqd(3,i)); % Rotation matrix 2
+          -sin(Reqd(3,i)), -cos(Reqd(3,i))];
+       
     Error(1:2,i) = (R1 * xyGE(1:2,i));     % position error in body frame
 
     % Velocity Error and Reqd Values 
-    ts = 0.01;                              % sample time
+    ts = 1;                                % sample time
     if (i==1)
         xydot_GE = xyGE(1:2,i)/ts;         % velocity error in global frame
         Error(6,i) = Error(3,i)/ts;        % r_error
@@ -57,10 +62,10 @@ for i = 1:200
         xydot_GE = [((xyGE(1,i) - xyGE(1,i-1))/ts);  ((xyGE(2,i) - xyGE(2,i-1))/ts)]; % velocity error in global frame
         Error(6,i) = ((Error(3,i) - Error(3,i-1))/ts);   % r_error
     end 	
-    Error(4:5,i) = (R1 * xydot_GE);	   % velocity error in body frame 
-    Reqd(4,i) = auv(4,i) - Error(4,i);     % u_req
-    Reqd(5,i) = auv(5,i) - Error(5,i);     % v_req
-    Reqd(6,i) = auv(6,i) - Error(6,i);     % r_req
+    
+    Reqd(4:5,i) = (R2)\(xydot_GE - (R1*auv(3:4,i)));
+    Error(4:5,i) = auv(4:5,i) - Reqd(4:5,i); % velocity error in body frame   
+    Reqd(6,i) = auv(6,i) - Error(6,i);       % r_req
     
     % Display
     disp('reqd');
@@ -69,10 +74,9 @@ for i = 1:200
     %disp(Error(1:6,i));
     
     % Control action by LQR
-    time_period = [0 0.01];
-    opts = odeset('RelTol',1e-2,'AbsTol',1e-5);
+    time_period = [0 ts];
     V0 = auv(:,i);
-    [t1, p] = ode45('Trackfn', time_period, V0, opts);
+    [t1, p] = ode45('Trackfn', time_period, V0);
     
     % Plots
     figure(1)
@@ -91,5 +95,6 @@ for i = 1:200
     disp(auv(1:6,i+1));
     
 end
+
 
 
