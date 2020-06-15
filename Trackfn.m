@@ -12,7 +12,7 @@ function dpdt = Trackfn(t,p)
 
     dpdt(5) = (-(m(1)*p(4)*p(6))/m(2)) + ((-d(2)*p(5))/m(2));                      % to find v
 
-    dpdt(6) = (((m(1)-m(2))*p(4)*p(5))/m(3)) + ((-d33*p(6))/m(3)) + (Fin(2)/m(3)); % to find r
+    dpdt(6) = (((m(1)-m(2))*p(4)*p(5))/m(3)) + ((-d(3)*p(6))/m(3)) + (Fin(2)/m(3)); % to find r
 
     dpdt(3) = (p(6));                                                              % to find psi
 
