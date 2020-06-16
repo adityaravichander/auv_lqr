@@ -2,33 +2,36 @@
 
 % Constants
 global m
+global onebym 
 global d
-mass= 185;                    % Mass kg
-Iz = 50;                      % Rotational inertia kg-m^2
-Xu = -30;                     % added mass kg
-Yv = -90;                     % added mass kg
-Nr = -30;                     % added mass kg
-m = [mass-Xu, mass-Yv, Iz-Nr] % combined inertia and added mass terms
-d = [70, 100, 50];            % linear drag [surge, sway, yaw]
+mass= 185.0;                    % Mass kg
+Iz = 50.0;                      % Rotational inertia kg-m^2
+Xu = -30.0;                     % added mass kg
+Yv = -90.0;                     % added mass kg
+Nr = -30.0;                     % added mass kg
+m = [(mass-Xu), (mass-Yv), (Iz-Nr)]; % combined inertia and added mass terms
+onebym = [1.0/(mass-Xu), 1.0/(mass-Yv), 1.0/(Iz-Nr)]; % one by combined inertia and added mass terms
+d = [70.0, 100.0, 50.0];            % linear drag [surge, sway, yaw]
 
 % Path values
 cx = 0; % x coordinate of center of circle
 cy = 0; % y coordinate of center of circle
-R = 10; % Radius of circle
-Reqd = zeros(6, 200);  % [ x_req, y_req, psi_req, u_req, v_req, r_req ] Required values in global frame
+R = 10.0; % Radius of circle
+j = 1000;
+Reqd = zeros(6, j);  % [ x_req, y_req, psi_req, u_req, v_req, r_req ] Required values in global frame
 
 % AUV values 
-auv = zeros(6, 100);   % [ x, y, psi, u, v, r ] Auv values in global frame
-auv(:, 1) = [10.5, 5, 0, 0, 0, 0];
+auv = zeros(6, j);   % [ x, y, psi, u, v, r ] Auv values in global frame
+auv(:, 1) = [10.5, 5.0, 0, 0, 0, 0];
 disp('Auv');
 disp(auv(:, 1)); 
 global Fin             
-Fin = [0, 0];          % Force input
-Error = zeros(6, 200); % Error values [ x_error, y_error, psi_error, u_error, v_error, r_error ] 
+Fin = [0; 0];          % Force input
+Error = zeros(6, j); % Error values [ x_error, y_error, psi_error, u_error, v_error, r_error ] 
 
 %% Path Tracking
 
-for i = 1:200
+for i = 1:j
     disp(i);
 
     % Calculate perpendicular distance to circle
@@ -51,26 +54,24 @@ for i = 1:200
     Reqd(2,i) = auv(2,i) - Error(2);        % y_required
 
     % Velocity Error and Reqd Values 
-    ts = 0.01;                              % sample time
-    if (i==1)
-        xydot_GE = Error(1:2,i)/ts;         % velocity error in global frame
-        Error(6,i) = Error(3,i)/ts;         % r_error
+    ts = 0.2;                              % sample time
+    if(i==1)
+        Xyp_dot = (Error(1:3,i)/ts);        % [xe_dot, ye_dot, psie_dot]
     else
-        xydot_GE = [((Error(1,i) - Error(1,i-1))/ts);  ((Error(2,i) - Error(2,i-1))/ts)]; % velocity error in global frame
-        Error(6,i) = ((Error(3,i) - Error(3,i-1))/ts); % r_error
+        Xyp_dot = ((Error(1:3,i) - Error(1:3,i-1))/ts); % [xe_dot, ye_dot, psie_dot]
     end 	
 
     % Rotation matrix 1
-    R1 = [ cos(Reqd(3,i)),  sin(Reqd(3,i)); 
-           sin(Reqd(3,i)), -cos(Reqd(3,i))];
+    R1 = [ cos(Reqd(3,i)), -sin(Reqd(3,i)), 0; 
+           sin(Reqd(3,i)),  cos(Reqd(3,i)), 0;
+                        0,               0, 1];
     % Rotation matrix 2   
-    R2 = [-cos(Reqd(3,i)) - (sin(Reqd(3,i))*Error(3,i)) , -sin(Reqd(3,i)) + (cos(Reqd(3,i))*Error(3,i)) ; 
-          -sin(Reqd(3,i)) + (cos(Reqd(3,i))*Error(3,i)) ,  cos(Reqd(3,i)) + (sin(Reqd(3,i))*Error(3,i))];
-       
-    Reqd(4:5,i) = (R2)\(xydot_GE - (R1*auv(3:4,i))); % ureq and vreq 
-    Error(4:5,i) = auv(4:5,i) - Reqd(4:5,i);         % u_error and v_error   
-    Reqd(6,i) = auv(6,i) - Error(6,i);               % r_req
-    
+    R2 = [-cos(Reqd(3,i)) - (sin(Reqd(3,i))*Error(3,i)) ,  sin(Reqd(3,i)) - (cos(Reqd(3,i))*Error(3,i)), 0; 
+          -sin(Reqd(3,i)) + (cos(Reqd(3,i))*Error(3,i)) , -cos(Reqd(3,i)) - (sin(Reqd(3,i))*Error(3,i)), 0;
+                                                       0,                                             0, 1];
+    Reqd(4:6,i) = (R2)\( Xyp_dot - (R1*auv(4:6,i))); % ureq, vreq, rreq
+    Error(4:6,i) = auv(4:6,i) - Reqd(4:6,i);         % u_error, v_error, r_error
+ 
     % Display
     disp('reqd');
     disp(Reqd(1:6,i));
@@ -78,20 +79,20 @@ for i = 1:200
     %disp(Error(1:6,i));
     
     % State model
-    A = [                    (-d(1)/m(1)),       ((m(2)*Reqd(6,i))/m(1)),  ((m(2)*Reqd(5,i))/m(1));               
-                 ((-m(1)*Reqd(6,i))/m(2)),                  (-d(2)/m(2)), ((-m(1)*Reqd(4,i))/m(2));
-            (((m(1)-m(2))*Reqd(5,i))/m(3)), (((m(1)-m(2))*Reqd(4,i))/m(3)),          (-d(3)/m(3))];
+    A = [                    (-d(1)*onebym(1)),        ((m(2)*Reqd(6,i))*onebym(1)),  ((m(2)*Reqd(5,i))*onebym(1));               
+                 ((-m(1)*Reqd(6,i))*onebym(2)),                   (-d(2)*onebym(2)), ((-m(1)*Reqd(4,i))*onebym(2));
+           (((m(1)-m(2))*Reqd(5,i))*onebym(3)), (((m(1)-m(2))*Reqd(4,i))*onebym(3)),             (-d(3)*onebym(3))];
         
-    B = [ 1/m(1),       0;
-              0,        0;
-              0,  1/m(3)];
+    B = [ onebym(1),            0;
+                  0,            0;
+                  0,    onebym(3)];
     
     % Tuning matrices    
     Q = 1*eye(3);
     Rt = 1*eye(2);
     
     % Control action by LQR
-    K = lqr(A,B,Q,Rt);     % gain from LQR
+    K = lqr(A,B,Q,Rt);    % gain from LQR
     F = -(K*Error(4:6,i)); % returns error in Fin     
     Fin = Fin-F;           % Updating Fin values
     
@@ -104,7 +105,7 @@ for i = 1:200
 
     % Plots
     figure(1)
-    plot(p(:,1), p(:,2), 'b')   % plots auv's path
+    plot(p(:,1), p(:,2), 'b');   % plots auv's path
     hold on
     plot(cx + (R * cos([1:360] .* pi / 180)), cy + (R * sin([1:360] .* pi / 180)), 'r'); % plots required path
 
