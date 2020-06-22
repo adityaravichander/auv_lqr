@@ -17,7 +17,7 @@ d = [70.0, 100.0, 50.0];            % linear drag [surge, sway, yaw]
 cx = 0; % x coordinate of center of circle
 cy = 0; % y coordinate of center of circle
 R = 10.0; % Radius of circle
-j = 1000;
+j = 200;
 Reqd = zeros(6, j);  % [ x_req, y_req, psi_req, u_req, v_req, r_req ] Required values in global frame
 
 % AUV values 
@@ -56,7 +56,7 @@ for i = 1:j
     % Velocity Error and Reqd Values 
     ts = 0.2;                              % sample time
     if(i==1)
-        Xyp_dot = (Error(1:3,i)/ts);        % [xe_dot, ye_dot, psie_dot]
+        Xyp_dot = (Error(1:3,i)/ts);       % [xe_dot, ye_dot, psie_dot]
     else
         Xyp_dot = ((Error(1:3,i) - Error(1:3,i-1))/ts); % [xe_dot, ye_dot, psie_dot]
     end 	
@@ -72,6 +72,17 @@ for i = 1:j
     Reqd(4:6,i) = (R2)\( Xyp_dot - (R1*auv(4:6,i))); % ureq, vreq, rreq
     Error(4:6,i) = auv(4:6,i) - Reqd(4:6,i);         % u_error, v_error, r_error
  
+    if(i==1)
+        u_dotreq = (Reqd(4,i)/ts);        % u_dot required 
+        r_dotreq = (Reqd(6,i)/ts);        % r_dot required
+    else
+        u_dotreq = ((Reqd(4,i) - Reqd(4,i-1))/ts); % u_dot required
+        r_dotreq = ((Reqd(6,i) - Reqd(6,i-1))/ts); % r_dot required
+    end 
+
+    Freq = [ (m(1)*u_dotreq) - (m(2)*Reqd(5,i)*Reqd(6,i)) + (d(1)*Reqd(4,i));
+             (m(3)*r_dotreq) - ((m(2)-m(1))*Reqd(4,i)*Reqd(5,i)) + (d(3)*Reqd(6,i))];
+
     % Display
     disp('reqd');
     disp(Reqd(1:6,i));
@@ -92,9 +103,9 @@ for i = 1:j
     Rt = 1*eye(2);
     
     % Control action by LQR
-    K = lqr(A,B,Q,Rt);    % gain from LQR
+    K = lqr(A,B,Q,Rt);     % gain from LQR
     F = -(K*Error(4:6,i)); % returns error in Fin     
-    Fin = Fin-F;           % Updating Fin values
+    Fin = Fin-F;          % Updating Fin values
     
     % ODE solver to update auv values
     time_period = [0 ts];                           % time period for ODE45
@@ -116,6 +127,7 @@ for i = 1:j
     disp(auv(1:6,i+1));
     
 end
+
 
 
 
