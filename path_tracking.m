@@ -17,7 +17,7 @@ d = [70.0, 100.0, 50.0];            % linear drag [surge, sway, yaw]
 cx = 0; % x coordinate of center of circle
 cy = 0; % y coordinate of center of circle
 R = 10.0; % Radius of circle
-j = 200;
+j = 3;
 Reqd = zeros(6, j);  % [ x_req, y_req, psi_req, u_req, v_req, r_req ] Required values in global frame
 
 % AUV values 
@@ -54,7 +54,7 @@ for i = 1:j
     Reqd(2,i) = auv(2,i) - Error(2);        % y_required
 
     % Velocity Error and Reqd Values 
-    ts = 0.2;                              % sample time
+    ts = 1;                              % sample time
     if(i==1)
         Xyp_dot = (Error(1:3,i)/ts);       % [xe_dot, ye_dot, psie_dot]
     else
@@ -105,7 +105,7 @@ for i = 1:j
     % Control action by LQR
     K = lqr(A,B,Q,Rt);     % gain from LQR
     F = -(K*Error(4:6,i)); % returns error in Fin     
-    Fin = Fin-F;          % Updating Fin values
+    Fin = F+Freq;          % Updating Fin values
     
     % ODE solver to update auv values
     time_period = [0 ts];                           % time period for ODE45
